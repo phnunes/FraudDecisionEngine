@@ -1,0 +1,47 @@
+namespace FraudAnalysis.Application.Validators;
+
+/// <summary>
+/// Valida se latitude e longitude formam uma coordenada geográfica válida
+/// e detecta coordenadas nulas (0,0), que geralmente indicam ausência de dado.
+/// </summary>
+public static class GeoLocationValidator
+{
+    public static bool IsValid(decimal latitude, decimal longitude)
+    {
+        return latitude is >= -90 and <= 90 &&
+               longitude is >= -180 and <= 180;
+    }
+
+    /// <summary>
+    /// Retorna true se a coordenada for (0,0) — ponto no Oceano Atlântico
+    /// frequentemente enviado quando o dispositivo não tem GPS.
+    /// </summary>
+    public static bool IsNullIsland(decimal latitude, decimal longitude)
+    {
+        return latitude == 0 && longitude == 0;
+    }
+
+    /// <summary>
+    /// Calcula a distância em km entre dois pontos usando a fórmula de Haversine.
+    /// Usado pela regra de geolocalização suspeita no Worker.
+    /// </summary>
+    public static double DistanceKm(
+        decimal lat1, decimal lon1,
+        decimal lat2, decimal lon2)
+    {
+        const double earthRadiusKm = 6371;
+
+        var dLat = ToRadians((double)(lat2 - lat1));
+        var dLon = ToRadians((double)(lon2 - lon1));
+
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRadians((double)lat1)) *
+                Math.Cos(ToRadians((double)lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return earthRadiusKm * c;
+    }
+
+    private static double ToRadians(double degrees) => degrees * Math.PI / 180;
+}

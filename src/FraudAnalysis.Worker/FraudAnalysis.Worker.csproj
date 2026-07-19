@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-FraudAnalysis.Worker-257e25f6-85a4-4700-a890-5870e3de044c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="prometheus-net" Version="8.2.1" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FraudAnalysis.Domain\FraudAnalysis.Domain.csproj" />
+    <ProjectReference Include="..\FraudAnalysis.Application\FraudAnalysis.Application.csproj" />
+    <ProjectReference Include="..\FraudAnalysis.Infrastructure\FraudAnalysis.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

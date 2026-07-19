@@ -1,0 +1,86 @@
+services:
+
+  # ── Banco de dados ──────────────────────────────────────────────────────────
+  fraudanalysis.db:
+    image: postgres:16-alpine
+    container_name: fraudanalysis-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - fraudanalysisdb-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Mensageria ──────────────────────────────────────────────────────────────
+  fraudanalysis.rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: fraudanalysis-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"   # AMQP — usado pela API e pelo Worker
+      - "15672:15672" # Management UI — http://localhost:15672
+    volumes:
+      - fraudanalysisrabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API ─────────────────────────────────────────────────────────────────────
+  fraudanalysis.api:
+    image: ${DOCKER_REGISTRY-}fraudanalysisapi
+    container_name: fraudanalysis-api
+    build:
+      context: .
+      dockerfile: src/FraudAnalysis.Api/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__Postgres=Host=fraudanalysis.db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMq__Host=fraudanalysis.rabbitmq
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+    depends_on:
+      fraudanalysis.db:
+        condition: service_healthy
+      fraudanalysis.rabbitmq:
+        condition: service_healthy
+
+  # ── Worker ───────────────────────────────────────────────────────────────────
+  fraudanalysis.worker:
+    image: ${DOCKER_REGISTRY-}fraudanalysisworker
+    container_name: fraudanalysis-worker
+    build:
+      context: .
+      dockerfile: src/FraudAnalysis.Worker/Dockerfile
+    ports:
+      - "9090:9090"
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      - ConnectionStrings__Postgres=Host=fraudanalysis.db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMq__Host=fraudanalysis.rabbitmq
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+    depends_on:
+      fraudanalysis.db:
+        condition: service_healthy
+      fraudanalysis.rabbitmq:
+        condition: service_healthy
+
+volumes:
+  fraudanalysisdb-data:
+  fraudanalysisrabbitmq-data:

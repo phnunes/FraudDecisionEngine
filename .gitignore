@@ -1,0 +1,16 @@
+# .env com credenciais locais — nunca commitar
+.env
+
+# Build
+**/bin/
+**/obj/
+
+# VS
+.vs/
+*.user
+
+# Rider
+.idea/
+
+# Logs
+*.log

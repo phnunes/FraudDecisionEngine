@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FraudAnalysis.Api/FraudAnalysis.Api.csproj" />
+    <Project Path="src/FraudAnalysis.Application/FraudAnalysis.Application.csproj" />
+    <Project Path="src/FraudAnalysis.Domain/FraudAnalysis.Domain.csproj" />
+    <Project Path="src/FraudAnalysis.Infrastructure/FraudAnalysis.Infrastructure.csproj" />
+    <Project Path="src/FraudAnalysis.Worker/FraudAnalysis.Worker.csproj" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>
