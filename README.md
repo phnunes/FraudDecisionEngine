@@ -47,7 +47,7 @@ graph LR
     RabbitMQ -->|Consume| Worker[FraudAnalysis.Worker]
     API -->|Read/Write| PostgreSQL[(PostgreSQL)]
     Worker -->|Read/Write| PostgreSQL
-    Worker -->|Expose :9090| Prometheus[/metrics]
+    Worker -->|Expose :9090| Prometheus["/metrics"]
 ```
 
 ## Diagrama de Sequencia
@@ -220,7 +220,7 @@ Consulta o estado atual de uma transacao.
 
 **Response 200 OK:**
 
-```json
+```json 
 {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "Finished",
@@ -240,10 +240,10 @@ Consulta o estado atual de uma transacao.
 docker compose up -d
 ```
 
-Sobe PostgreSQL, RabbitMQ, API (porta 5000) e Worker.
+Sobe PostgreSQL, RabbitMQ, API (porta 8080) e Worker.
 
 **Servicos expostos:**
-- API: http://localhost:5000
+- API (Swagger): http://localhost:8080
 - RabbitMQ Management: http://localhost:15672 (guest/guest)
 - Metricas Worker: http://localhost:9090/metrics
 
