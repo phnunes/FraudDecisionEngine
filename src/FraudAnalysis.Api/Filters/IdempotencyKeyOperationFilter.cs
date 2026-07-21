@@ -3,10 +3,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FraudAnalysis.Api.Filters;
 
-/// <summary>
-/// Adiciona o campo Idempotency-Key como header obrigatório
-/// em todos os endpoints HTTP POST da API.
-/// </summary>
+// Adiciona o header Idempotency-Key como obrigatório nos endpoints POST do Swagger.
 public class IdempotencyKeyOperationFilter : IOperationFilter
 {
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
@@ -24,8 +21,7 @@ public class IdempotencyKeyOperationFilter : IOperationFilter
             Name        = "Idempotency-Key",
             In          = ParameterLocation.Header,
             Required    = true,
-            Description = "UUID único por requisição (ex: `550e8400-e29b-41d4-a716-446655440000`). " +
-                          "Reenvios com a mesma chave retornam a transação original sem criar duplicata.",
+            Description = "UUID único por requisição para garantir idempotência.",
             Schema = new OpenApiSchema
             {
                 Type    = "string",

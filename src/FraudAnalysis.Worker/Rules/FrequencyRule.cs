@@ -4,10 +4,7 @@ using FraudAnalysis.Domain.Interfaces;
 
 namespace FraudAnalysis.Worker.Rules;
 
-/// <summary>
-/// Rejeita quando o mesmo cliente realiza mais de 5 transações em 1 minuto.
-/// Indica automação maliciosa ou sequência de tentativas de fraude.
-/// </summary>
+// Rejeita quando o cliente realiza mais de 5 transações em 1 minuto.
 public class FrequencyRule : IRiskRule
 {
     private const int MaxTransactions = 5;
@@ -20,7 +17,7 @@ public class FrequencyRule : IRiskRule
         _repository = repository;
     }
 
-    public FraudDecision? Evaluate(Transaction transaction)
+    public RuleResult Evaluate(Transaction transaction)
     {
         var count = _repository
             .CountRecentByCustomerAsync(transaction.CustomerId, Window)
@@ -28,8 +25,8 @@ public class FrequencyRule : IRiskRule
             .GetResult();
 
         if (count > MaxTransactions)
-            return FraudDecision.Rejected;
+            return RuleResult.Rejected;
 
-        return null;
+        return RuleResult.Approved;
     }
 }

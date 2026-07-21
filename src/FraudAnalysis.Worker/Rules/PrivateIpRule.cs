@@ -5,24 +5,20 @@ using FraudAnalysis.Domain.Interfaces;
 
 namespace FraudAnalysis.Worker.Rules;
 
-/// <summary>
-/// Sinaliza para revisão transações originadas de IPs privados/internos.
-/// IPs privados (10.x, 192.168.x, 172.16-31.x) não deveriam originar
-/// transações financeiras externas — indica possível proxy interno ou teste.
-/// </summary>
+// Sinaliza para revisão transações originadas de IPs privados ou inválidos.
 public class PrivateIpRule : IRiskRule
 {
-    public FraudDecision? Evaluate(Transaction transaction)
+    public RuleResult Evaluate(Transaction transaction)
     {
         if (string.IsNullOrWhiteSpace(transaction.Ip))
-            return FraudDecision.Review;
+            return RuleResult.Review;
 
         if (!IpValidator.IsValid(transaction.Ip))
-            return FraudDecision.Rejected;
+            return RuleResult.Rejected;
 
         if (IpValidator.IsPrivate(transaction.Ip))
-            return FraudDecision.Review;
+            return RuleResult.Review;
 
-        return null;
+        return RuleResult.Approved;
     }
 }

@@ -1,30 +1,17 @@
 using FraudAnalysis.Domain.Entities;
 using FraudAnalysis.Domain.Enums;
 using FraudAnalysis.Domain.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace FraudAnalysis.Worker.Engine;
 
-/// <summary>
-/// Motor de decisão antifraude.
-/// Executa todas as IRiskRule registradas e consolida o resultado.
-///
-/// Prioridade de decisão (da mais grave para a menos grave):
-///   Rejected  >  Review  >  Approved
-///
-/// Se qualquer regra retornar Rejected, a transação é bloqueada imediatamente.
-/// Se nenhuma regra retornar Rejected mas alguma retornar Review, vai para revisão.
-/// Se nenhuma regra disparar, a transação é aprovada.
-/// </summary>
+// Motor de decisão antifraude — executa todas as IRiskRule e consolida o veredito.
 public class RiskEngine
 {
     private readonly IEnumerable<IRiskRule> _rules;
-    private readonly ILogger<RiskEngine> _logger;
 
-    public RiskEngine(IEnumerable<IRiskRule> rules, ILogger<RiskEngine> logger)
+    public RiskEngine(IEnumerable<IRiskRule> rules)
     {
-        _rules  = rules;
-        _logger = logger;
+        _rules = rules;
     }
 
     public FraudDecision Evaluate(Transaction transaction)
@@ -35,30 +22,15 @@ public class RiskEngine
         {
             var result = rule.Evaluate(transaction);
 
-            if (result is null)
+            if (result == RuleResult.NotApplicable)
                 continue;
 
-            _logger.LogDebug(
-                "Regra {Rule} retornou {Decision} para transação {TransactionId}",
-                rule.GetType().Name, result, transaction.Id);
-
-            // Rejected tem prioridade máxima — interrompe a avaliação
-            if (result == FraudDecision.Rejected)
-            {
-                _logger.LogWarning(
-                    "Transação {TransactionId} REJEITADA pela regra {Rule}",
-                    transaction.Id, rule.GetType().Name);
+            if (result == RuleResult.Rejected)
                 return FraudDecision.Rejected;
-            }
 
-            // Review tem prioridade sobre Approved mas não interrompe
-            if (result == FraudDecision.Review)
+            if (result == RuleResult.Review)
                 finalDecision = FraudDecision.Review;
         }
-
-        _logger.LogInformation(
-            "Transação {TransactionId} avaliada: {Decision}",
-            transaction.Id, finalDecision);
 
         return finalDecision;
     }

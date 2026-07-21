@@ -33,7 +33,7 @@ Domain <── Infrastructure (implementa interfaces do Domain)
 3. API publica evento `TransactionCreated` na fila RabbitMQ.
 4. API retorna `202 Accepted` com o Id da transacao.
 5. Worker consome a mensagem, atualiza status para `Processing`.
-6. RiskEngine executa todas as regras (SuspiciousAmount, HighValue, Frequency, PrivateIp, ImpossibleTravel, OffHours).
+6. RiskEngine executa todas as regras (HighValue, Frequency, PrivateIp, ImpossibleTravel, OffHours).
 7. Worker persiste a decisao e atualiza status para `Finished`.
 8. Cliente consulta `GET /transactions/{id}` para obter o resultado.
 
@@ -47,7 +47,6 @@ graph LR
     RabbitMQ -->|Consume| Worker[FraudAnalysis.Worker]
     API -->|Read/Write| PostgreSQL[(PostgreSQL)]
     Worker -->|Read/Write| PostgreSQL
-    Worker -->|Expose :9090| Prometheus["/metrics"]
 ```
 
 ## Diagrama de Sequencia
@@ -124,29 +123,37 @@ O sistema implementa multiplos mecanismos de resiliencia:
 
 | Mecanismo | Onde | Descricao |
 |-----------|------|-----------|
-| Retry com backoff exponencial | Worker/Consumer | Mensagens que falham sao reprocessadas com intervalos crescentes. |
+| Retry com requeue | Worker/Consumer | Mensagens que falham sao reprocessadas ate 3 vezes antes de ir para DLQ. |
 | Dead Letter Queue (DLQ) | RabbitMQ | Mensagens que excedem o limite de retries vao para a DLQ para investigacao. |
-| Circuit Breaker | Infrastructure (Polly) | Protege chamadas ao banco e servicos externos contra falhas em cascata. |
 | ACK/NACK manual | Worker | Mensagem so recebe ACK apos persistencia bem-sucedida; NACK devolve para a fila. |
 | Healthchecks | Docker Compose | PostgreSQL e RabbitMQ possuem healthchecks; servicos so iniciam quando dependencias estao saudaveis. |
 
-## Observabilidade
+## Regras do Worker (RiskEngine)
 
-**Metricas Prometheus (Worker, porta 9090):**
+O RiskEngine executa as regras na ordem de registro e consolida o resultado.
 
-| Metrica | Tipo | Descricao |
-|---------|------|-----------|
-| `fraud_transactions_processed_total` | Counter | Transacoes processadas, rotuladas por decisao. |
-| `fraud_transactions_failed_total` | Counter | Falhas no processamento de mensagens. |
-| `fraud_transaction_processing_duration_ms` | Histogram | Duracao do processamento por transacao. |
-| `fraud_messages_in_flight` | Gauge | Mensagens sendo processadas simultaneamente. |
+**Prioridade de decisao:** `Rejected` > `Review` > `Approved`
 
-**Logs estruturados:**
-- Formato JSON via Microsoft.Extensions.Logging.
-- Correlacao por `TransactionId` em todas as etapas.
-- Niveis: Debug (regras avaliadas), Information (decisao final), Warning (rejeicoes).
+Cada regra retorna um `RuleResult`:
 
-**Endpoint:** `http://worker:9090/metrics` (scraping Prometheus).
+| Valor | Significado |
+|-------|-------------|
+| `NotApplicable` | A regra nao possui dados suficientes para se pronunciar (sem geo, sem historico). Ignorada pelo motor. |
+| `Approved` | A regra avaliou e nao encontrou risco. |
+| `Review` | Risco moderado — sinaliza revisao humana. |
+| `Rejected` | Risco critico — recomenda bloqueio imediato. |
+
+**Regras implementadas:**
+
+| Regra | Resultado | Condicao |
+|-------|-----------|----------|
+| `HighValueRule` | Review | Valor acima de R$ 10.000,00. |
+| `FrequencyRule` | Rejected | Mais de 5 transacoes do mesmo cliente em 1 minuto. |
+| `PrivateIpRule` | Review/Rejected | IP de faixa privada = Review. IP invalido = Rejected. |
+| `ImpossibleTravelRule` | Rejected/Review/NotApplicable | Velocidade > 1000 km/h = Rejected. > 500 km em < 2h = Review. Sem geo = NotApplicable. |
+| `OffHoursRule` | Review | Transacao entre 00:00 e 05:00 (horario de Brasilia). |
+
+Se nenhuma regra disparar (todas retornam `Approved` ou `NotApplicable`), a transacao e aprovada automaticamente.
 
 ## Validacoes na API
 
@@ -160,21 +167,6 @@ O payload `CreateTransactionRequest` implementa `IValidatableObject` com validac
 | `Amount` | Maior que zero. |
 | `Currency` | Exatamente 3 caracteres (ISO 4217). |
 | `CustomerId` | Obrigatorio (GUID). |
-
-## Regras do Worker (RiskEngine)
-
-O RiskEngine executa as regras na ordem de registro. Prioridade de decisao: Rejected > Review > Approved.
-
-| Regra | Decisao | Condicao |
-|-------|---------|----------|
-| `SuspiciousAmountRule` | Rejected | Valor exatamente igual a R$ 100,00 (padrao de teste de cartao clonado). |
-| `HighValueRule` | Review | Valor acima de R$ 10.000,00. |
-| `FrequencyRule` | Rejected | Mais de 5 transacoes do mesmo cliente em 1 minuto. |
-| `PrivateIpRule` | Review | IP de faixa privada (10.x, 192.168.x, 172.16-31.x). Rejected se IP invalido. |
-| `ImpossibleTravelRule` | Rejected | Velocidade implicita entre duas transacoes > 1000 km/h. Review se > 500 km em < 2h. |
-| `OffHoursRule` | Review | Transacao entre 00:00 e 05:00 (horario de Brasilia). |
-
-Se nenhuma regra disparar, a transacao e aprovada automaticamente.
 
 ## Contrato da API
 
@@ -220,7 +212,7 @@ Consulta o estado atual de uma transacao.
 
 **Response 200 OK:**
 
-```json 
+```json
 {
   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "Finished",
@@ -245,7 +237,6 @@ Sobe PostgreSQL, RabbitMQ, API (porta 8080) e Worker.
 **Servicos expostos:**
 - API (Swagger): http://localhost:8080
 - RabbitMQ Management: http://localhost:15672 (guest/guest)
-- Metricas Worker: http://localhost:9090/metrics
 
 ### Desenvolvimento local
 

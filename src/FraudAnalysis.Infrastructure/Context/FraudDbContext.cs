@@ -4,11 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FraudAnalysis.Infrastructure.Context;
 
-/// <summary>
-/// Contexto principal do EF Core.
-/// Mantém apenas o DbSet necessário; toda configuração de mapeamento
-/// é delegada para as classes IEntityTypeConfiguration (pasta Configurations).
-/// </summary>
+// Contexto EF Core principal — aplica configurações do assembly automaticamente.
 public class FraudDbContext : DbContext
 {
     public FraudDbContext(DbContextOptions<FraudDbContext> options)
@@ -18,7 +14,6 @@ public class FraudDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Aplica todas as configurações encontradas no assembly da Infrastructure
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FraudDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }

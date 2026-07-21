@@ -1,9 +1,6 @@
 namespace FraudAnalysis.Application.Validators;
 
-/// <summary>
-/// Valida se latitude e longitude formam uma coordenada geográfica válida
-/// e detecta coordenadas nulas (0,0), que geralmente indicam ausência de dado.
-/// </summary>
+// Valida coordenadas geográficas e calcula distância via Haversine.
 public static class GeoLocationValidator
 {
     public static bool IsValid(decimal latitude, decimal longitude)
@@ -12,19 +9,13 @@ public static class GeoLocationValidator
                longitude is >= -180 and <= 180;
     }
 
-    /// <summary>
-    /// Retorna true se a coordenada for (0,0) — ponto no Oceano Atlântico
-    /// frequentemente enviado quando o dispositivo não tem GPS.
-    /// </summary>
+    // Retorna true se a coordenada for (0,0) — indica ausência de dado de GPS.
     public static bool IsNullIsland(decimal latitude, decimal longitude)
     {
         return latitude == 0 && longitude == 0;
     }
 
-    /// <summary>
-    /// Calcula a distância em km entre dois pontos usando a fórmula de Haversine.
-    /// Usado pela regra de geolocalização suspeita no Worker.
-    /// </summary>
+    // Calcula distância em km entre dois pontos usando fórmula de Haversine.
     public static double DistanceKm(
         decimal lat1, decimal lon1,
         decimal lat2, decimal lon2)

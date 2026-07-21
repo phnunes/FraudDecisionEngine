@@ -4,10 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FraudAnalysis.Application;
 
-/// <summary>
-/// Registro dos serviços da camada Application no DI container.
-/// Chamado uma única vez no Program.cs da API.
-/// </summary>
+// Registro dos serviços da camada Application no DI container.
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)

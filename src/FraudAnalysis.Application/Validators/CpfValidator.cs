@@ -1,9 +1,6 @@
 namespace FraudAnalysis.Application.Validators;
 
-/// <summary>
-/// Valida CPF usando o algoritmo oficial da Receita Federal.
-/// Aceita CPF apenas com dígitos (11 caracteres).
-/// </summary>
+// Valida CPF usando o algoritmo oficial da Receita Federal.
 public static class CpfValidator
 {
     public static bool IsValid(string cpf)
@@ -11,13 +8,11 @@ public static class CpfValidator
         if (string.IsNullOrWhiteSpace(cpf))
             return false;
 
-        // Remove qualquer formatação residual
         cpf = cpf.Trim().Replace(".", "").Replace("-", "");
 
         if (cpf.Length != 11 || !cpf.All(char.IsDigit))
             return false;
 
-        // CPFs com todos os dígitos iguais são inválidos (ex: 111.111.111-11)
         if (cpf.Distinct().Count() == 1)
             return false;
 
