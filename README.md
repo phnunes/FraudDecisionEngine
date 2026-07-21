@@ -273,4 +273,3 @@ Configuradas via `.env` na raiz ou variaveis de ambiente do sistema:
 | [ADR-001](docs/adr/ADR-001-postgresql.md) | Uso de PostgreSQL como banco de dados |
 | [ADR-002](docs/adr/ADR-002-rabbitmq.md) | Uso de RabbitMQ como broker de mensageria |
 | [ADR-003](docs/adr/ADR-003-idempotencia.md) | Estrategia de idempotencia via header + indice unico |
-| [ADR-004](docs/adr/ADR-004-clean-architecture.md) | Adocao de Clean Architecture |
