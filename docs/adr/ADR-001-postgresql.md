@@ -1,8 +1,5 @@
 # ADR-001: PostgreSQL como banco de dados
 
-**Status:** Aceito  
-**Data:** 2026-07-13
-
 ## Decisao
 
 Usar PostgreSQL 16 como banco relacional principal.
