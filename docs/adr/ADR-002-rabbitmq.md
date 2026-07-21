@@ -1,8 +1,5 @@
 # ADR-002: RabbitMQ como broker de mensageria
 
-**Status:** Aceito  
-**Data:** 2026-07-13
-
 ## Decisao
 
 Usar RabbitMQ 3.13 para comunicacao assincrona entre API e Worker.
