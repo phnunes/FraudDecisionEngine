@@ -25,10 +25,9 @@ Exigir header `Idempotency-Key` (UUID) em todo `POST /transactions` e garantir u
 ## Alternativas descartadas
 
 - **Redis com TTL** — componente extra, janela de vulnerabilidade apos expiracao
-- **SELECT antes do INSERT sem indice** — vulneravel a race condition
 
 ## Consequencias
 
 - Zero duplicatas garantidas no nivel do banco
 - Retries do cliente sao transparentes
-- Cliente precisa gerar UUID por requisicao (padrao de mercado para APIs financeiras)
+- Cliente precisa gerar UUID por requisicao
