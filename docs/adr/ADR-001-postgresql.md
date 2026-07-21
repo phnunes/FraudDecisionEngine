@@ -16,7 +16,7 @@ Usar PostgreSQL 16 como banco relacional principal.
 ## Alternativas descartadas
 
 - **SQL Server** — custo de licenciamento sem beneficio tecnico adicional
-- **MongoDB** — sem ACID multi-document transparente; inconsistente para decisoes antifraude
+- **MongoDB** — sem ACID; inconsistente para decisoes antifraude
 
 ## Consequencias
 
